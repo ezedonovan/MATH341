@@ -1,0 +1,81 @@
+<head>
+  <title>Math 341</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="third_party/moment.min.js"></script>
+  <script src="third_party/chart.utils.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"></script>
+</head>
+<body>
+  <p><input type='checkbox' id='btnPlay' checked> Play/Stop</p>
+  <div style='width: 75%;'>
+    <canvas id="myChart"></canvas>
+  </div>
+</body>
+
+<script>
+  var data = {
+    labels: [],
+    datasets: [{
+      label: 'Categories',
+      data: [],
+      borderWidth: 1
+    }]
+  };
+   
+	var options = {
+				responsive: true,
+				title: {
+					display: true,
+					text: 'MATH 341'
+				},
+				scales: {
+					xAxes: [{
+						type: 'time',
+            displayFormats: 'minute',
+						display: true,
+						scaleLabel: {
+							display: true,
+							labelString: 'Time'
+						},
+						ticks: {
+							major: {
+								fontStyle: 'bold',
+								fontColor: '#FF0000'
+							}
+						}
+					}],
+					yAxes: [{
+						display: true,
+						scaleLabel: {
+							display: true,
+							labelString: 'value'
+						}
+					}]
+				}
+			};
+  // Barchart
+  var chart = new Chart($("#myChart"), {
+      type: 'line',
+      data: data,
+      options: options
+  });
+  
+  function addData(chart, label, data) {
+      chart.data.labels.push(label);
+      chart.data.datasets.forEach((dataset) => {
+          dataset.data.push(data);
+      });
+      chart.update();
+    //console.log(data);
+  }
+  
+  (function(){
+      // do some stuff
+    if( $('#btnPlay').prop('checked') ){
+      addData( chart, moment().format('MM/D/YYYY H:m:s'), randomScalingFactor(0, 100) );
+    }
+    setTimeout(arguments.callee, 1000); // wait for 2s
+  })();
+  
+
+</script>
