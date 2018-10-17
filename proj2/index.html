@@ -1,0 +1,77 @@
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="../third_party/chart.utils.js"></script>
+
+<style>
+    #myCanvas {
+        border:1px solid #d3d3d3;
+    }
+</style>
+
+<p><input type='checkbox' id='btnPlay' checked> Play/Stop</p>
+<canvas id='myCanvas' width='400' height='400'>
+
+</canvas>
+
+<script>
+
+var c = document.getElementById("myCanvas");
+var ctx=c.getContext("2d");
+
+function animal(origin) {
+    this.distance = 10;
+    this.max_moves = 30;
+    this.cur_pos = { x: origin.x , y: origin.y };
+    this.counter = 0;
+
+    this.ctx = ctx;
+
+    this.move = function(){
+        this.ctx.strokeStyle = Samples.utils.color( randomScalingFactor( 7 ) );
+        while( this.counter <= this.max_moves ){
+            this.draw(this.getRandomDirection())
+            this.counter++;
+        }
+    }
+
+    this.getRandomDirection = function(){
+        var possible_moves = ['U', 'D', 'L', 'R'];
+        switch( possible_moves[ randomScalingFactor(0, 3) ] ){
+            case 'U':
+                return { x: 0, y: this.distance }
+            case 'D':
+                return { x: 0, y: -1 * this.distance }
+            case 'L':
+                return { x: -1 * this.distance, y: 0 }
+            case 'R':
+                return { x: this.distance, y: 0 }
+        }
+    }
+
+    this.draw = function( destination ){
+        this.ctx.beginPath();
+        this.ctx.moveTo( this.cur_pos.x, this.cur_pos.y);
+        this.ctx.lineTo( this.cur_pos.x + destination.x, this.cur_pos.y + destination.y);
+        this.ctx.stroke();
+        this.cur_pos.x += destination.x;
+        this.cur_pos.y += destination.y;
+    }
+}
+
+  (function(){
+    if( $('#btnPlay').prop('checked') ){
+        var a1 = new animal( getFieldCenter(c) )
+        a1.move();
+    }
+
+    setTimeout(arguments.callee, 2000); // wait for 2s
+  })();
+
+  function getFieldCenter(element){
+      return {
+          x: parseInt($(element).css('width')) / 2,
+          y: parseInt($(element).css('height')) / 2
+      }
+  }
+
+</script>
