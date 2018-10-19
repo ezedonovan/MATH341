@@ -1,6 +1,7 @@
-
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script src="../third_party/chart.utils.js"></script>
+<link rel='stylesheet' type='text/css' href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"></script>
 
 <style>
     #myCanvas {
@@ -8,70 +9,186 @@
     }
 </style>
 
-<p><input type='checkbox' id='btnPlay' checked> Play/Stop</p>
-<canvas id='myCanvas' width='400' height='400'>
+<div class='row'>
+    <div class='col-6'>
+        <canvas id='myCanvas' width='600' height='600'>
+    </div>
+    <div class='col-6'>
+        <p>Make the delay time small for faster generation</p>
+        <div class="form-group row">
+            <div class='col-3'>
+                Play/Stop
+            </div>
+            <div class='col-9 col-form-label'>
+                <input type='checkbox' id='btnPlay' checked>
+            </div>
+            <label class='col-3 col-form-label'>Delay time (ms)</label>
+            <div class='col-9'>
+                <input type='integer' id='inputdelay' value='500'>
+            </div>
+        </div>
+        <table id='table-stats' class='table'>
+            <tr>
+                <td>x</td>
+                <td>up</td>
+                <td>down</td>
+                <td>right</td>
+                <td>left</td>
+            </tr>
+            <tr>
+                <td>p(x)</td>
+                <td id='p-up'>0</td>
+                <td id='p-down'>0</td>
+                <td id='p-right'>0</td>
+                <td id='p-left'>0</td>
+            </tr>
+        </table>
+        <div id="container" style="width: 75%;">
+            <canvas id="histogram"></canvas>
+        </div>
+    </div>
+</div>
+
+
 
 </canvas>
 
 <script>
 
-var c = document.getElementById("myCanvas");
-var ctx=c.getContext("2d");
+    var c = document.getElementById("myCanvas");
+    var ctx = c.getContext("2d");
 
-function animal(origin) {
-    this.distance = 10;
-    this.max_moves = 30;
-    this.cur_pos = { x: origin.x , y: origin.y };
-    this.counter = 0;
+    function animal(origin) {
+        this.distance = 15; // pixels moved
+        this.cur_pos = { x: origin.x, y: origin.y };
+        this.max_moves = 20;
 
-    this.ctx = ctx;
+        this.ctx = ctx;
 
-    this.move = function(){
-        this.ctx.strokeStyle = Samples.utils.color( randomScalingFactor( 7 ) );
-        while( this.counter <= this.max_moves ){
-            this.draw(this.getRandomDirection())
-            this.counter++;
+        this.start = function () {
+            var n = 1;
+            this.ctx.strokeStyle = Samples.utils.color(randomScalingFactor(7)); // setup line color
+            while (n <= this.max_moves) {
+                this.draw(this.getRandomDirection())
+                n++;
+            }
+        }
+
+        this.getRandomDirection = function () {
+            var possible_moves = ['up', 'down', 'left', 'right'];
+            var random_move = possible_moves[Math.floor((Math.random() * 4) + 0)];
+            stats.add(random_move);
+            switch (random_move) {
+                case 'up':
+                    return { x: 0, y: this.distance }
+                case 'down':
+                    return { x: 0, y: -1 * this.distance }
+                case 'left':
+                    return { x: -1 * this.distance, y: 0 }
+                case 'right':
+                    return { x: this.distance, y: 0 }
+            }
+        }
+
+        this.draw = function (destination) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.cur_pos.x, this.cur_pos.y);
+            this.ctx.lineTo(this.cur_pos.x + destination.x, this.cur_pos.y + destination.y);
+            this.ctx.stroke();
+            this.cur_pos.x += destination.x;
+            this.cur_pos.y += destination.y;
         }
     }
 
-    this.getRandomDirection = function(){
-        var possible_moves = ['U', 'D', 'L', 'R'];
-        switch( possible_moves[ randomScalingFactor(0, 3) ] ){
-            case 'U':
-                return { x: 0, y: this.distance }
-            case 'D':
-                return { x: 0, y: -1 * this.distance }
-            case 'L':
-                return { x: -1 * this.distance, y: 0 }
-            case 'R':
-                return { x: this.distance, y: 0 }
+    function stats(params = {}) {
+        this.table = $("#table-stats");
+        this.count = 0;
+        this.categories = [
+            { name: 'up', n: 0, dom: '#p-up' },
+            { name: 'down', n: 0, dom: '#p-down' },
+            { name: 'left', n: 0, dom: '#p-left' },
+            { name: 'right', n: 0, dom: '#p-right' }
+        ];
+
+        this.add = function (category) {
+            this.count++;
+            for (var i = 0; i < this.categories.length; i++) {
+                if (this.categories[i].name === category) {
+                    this.categories[i].n++;
+                    break;
+                }
+            }
+            this.update_view();
+        }
+
+        this.update_view = function () {
+            var new_prob;
+            barChartData.datasets[0].data = [0,0,0,0];
+            for (var i = 0; i < this.categories.length; i++) {
+                new_prob = this.categories[i].n / this.count;
+                $(this.categories[i].dom).html(new_prob.toFixed(4));
+                barChartData.datasets[0].data[i] = new_prob;
+            }
+            //window.myBar.update();
+        }
+
+    }
+
+    var stats = new stats();
+
+    function getFieldCenter(element) {
+        return {
+            x: parseInt($(element).css('width')) / 2,
+            y: parseInt($(element).css('height')) / 2
         }
     }
+    var color = Chart.helpers.color;
+    var barChartData = {
+        labels: ['Up', 'Down', 'Left', 'Right'],
+        datasets: [{
+            label: 'Dataset',
+            backgroundColor: color(window.chartColors.red).alpha(0.5).rgbString(),
+            borderColor: window.chartColors.red,
+            borderWidth: 1,
+            data: [
+                //0.5, 0.4, 0.3, 0.5
+            ]
+        }]
+    };
 
-    this.draw = function( destination ){
-        this.ctx.beginPath();
-        this.ctx.moveTo( this.cur_pos.x, this.cur_pos.y);
-        this.ctx.lineTo( this.cur_pos.x + destination.x, this.cur_pos.y + destination.y);
-        this.ctx.stroke();
-        this.cur_pos.x += destination.x;
-        this.cur_pos.y += destination.y;
-    }
-}
+        var histo_ctx = document.getElementById('histogram').getContext('2d');
+        window.myBar = new Chart(histo_ctx, {
+            type: 'bar',
+            data: barChartData,
+            options: {
+                responsive: true,
+                legend: {
+                    display: false,
+                    position: 'top'
+                },
+                title: {
+                    display: false,
+                    text: 'Chart.js Bar Chart'
+                },
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            min: 0,
+                            max: 1
+                        }
+                    }]
+                }
+            }
+        });
 
-  (function(){
-    if( $('#btnPlay').prop('checked') ){
-        var a1 = new animal( getFieldCenter(c) )
-        a1.move();
-    }
+    window.onload = function () {
+        if ($('#btnPlay').prop('checked')) {
+            var a = new animal(getFieldCenter(c));
+            a.start();
+            window.myBar.update();
+        }
+        setTimeout(arguments.callee, ($('#inputdelay').val() > 0 ? $('#inputdelay').val() : 500)); // wait for 2s
+    };
 
-    setTimeout(arguments.callee, 2000); // wait for 2s
-  })();
-
-  function getFieldCenter(element){
-      return {
-          x: parseInt($(element).css('width')) / 2,
-          y: parseInt($(element).css('height')) / 2
-      }
-  }
 
 </script>
