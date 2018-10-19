@@ -61,7 +61,7 @@
     function animal(origin) {
         this.distance = 15; // pixels moved
         this.cur_pos = { x: origin.x, y: origin.y };
-        this.max_moves = 20;
+        this.max_moves = 30;
 
         this.ctx = ctx;
 
@@ -166,6 +166,7 @@
                     display: false,
                     position: 'top'
                 },
+
                 title: {
                     display: false,
                     text: 'Chart.js Bar Chart'
@@ -174,7 +175,7 @@
                     yAxes: [{
                         ticks: {
                             min: 0,
-                            max: 1
+                            max: 0.5
                         }
                     }]
                 }
